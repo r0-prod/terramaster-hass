@@ -51,7 +51,12 @@ and restart Home Assistant.
 |---|---|
 | Host | IP address or hostname of the NAS |
 | Port | TOS web interface port, default `8181` |
-| Username / Password | A TOS account — administrator is required to change the fan mode |
+| Username / Password | Any TOS account reads every sensor; **administrator** is only needed to change the fan mode |
+
+Credentials are required — TOS has no anonymous read access, and every data
+endpoint rejects unauthenticated requests. If you only want monitoring, use a
+non-administrator TOS account: all sensors work, and the fan mode control reports
+that it is not permitted rather than failing obscurely.
 
 Options (⚙ on the integration) cover the polling interval and overheat protection.
 Reading temperatures runs SMART queries on the NAS and takes a few seconds, so the

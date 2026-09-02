@@ -262,3 +262,22 @@ async def test_fan_mode_failure_raises_a_translated_error(
         )
     assert err.value.translation_key == "set_fan_mode_failed"
     assert err.value.translation_domain == DOMAIN
+
+
+async def test_fan_mode_permission_error_explains_itself(
+    hass: HomeAssistant, mock_client
+) -> None:
+    """A read-only TOS account must get a message naming the real cause."""
+    from custom_components.terramaster.tos import TosPermissionError
+
+    await _setup(hass)
+    mock_client.set_hardware.side_effect = TosPermissionError("no rights")
+
+    with pytest.raises(HomeAssistantError) as err:
+        await hass.services.async_call(
+            "select",
+            "select_option",
+            {"entity_id": "select.tnas_fan_mode", "option": "low"},
+            blocking=True,
+        )
+    assert err.value.translation_key == "fan_mode_not_permitted"

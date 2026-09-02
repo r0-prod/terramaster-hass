@@ -11,7 +11,7 @@ from . import TerraMasterConfigEntry
 from .const import DOMAIN, FAN_LEVEL_TO_MODE, FAN_MODE_AUTO, FAN_MODE_TO_SETTING, FAN_MODES
 from .coordinator import TerraMasterCoordinator
 from .entity import TerraMasterEntity
-from .tos import TosError
+from .tos import TosError, TosPermissionError
 
 # Writes are serialised by the client; one entity, nothing to throttle.
 PARALLEL_UPDATES = 0
@@ -60,6 +60,12 @@ class TerraMasterFanMode(TerraMasterEntity, SelectEntity):
             await self.coordinator.async_set_hardware(
                 {"fan": {"is_auto": is_auto, "level": level}}
             )
+        except TosPermissionError as err:
+            # Reading works for any TOS account; changing hardware settings does not.
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="fan_mode_not_permitted",
+            ) from err
         except TosError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,

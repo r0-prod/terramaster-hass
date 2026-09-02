@@ -13,7 +13,7 @@
         "data_description": {
           "host": "IP address or hostname of the NAS, for example 192.168.1.10.",
           "port": "Port of the TOS web interface. The default is 8181.",
-          "username": "A TOS user account. An administrator account is required to change the fan mode.",
+          "username": "A TOS user account. Any account can read the sensors; an administrator account is only needed to change the fan mode.",
           "password": "The password for that account. It is stored locally and only ever sent to the NAS."
         }
       },
@@ -52,14 +52,16 @@
         "data_description": {
           "scan_interval": "Seconds between updates. Reading temperatures runs SMART queries on the NAS and takes a few seconds, so values below 30 add load for little benefit.",
           "overheat_protection": "If the hottest drive reaches the threshold while the fan is in a fixed mode, switch it back to Automatic. A fixed mode disables the firmware's own temperature ramp, so this prevents the drives from cooking.",
-          "overheat_celsius": "Temperature at which automatic fan control is restored. TerraMaster warns about drive life above 55 °C."
+          "overheat_celsius": "Temperature at which automatic fan control is restored. TerraMaster warns about drive life above 55 \u00b0C."
         }
       }
     }
   },
   "entity": {
     "binary_sensor": {
-      "disk_problem": { "name": "{disk_name} problem" }
+      "disk_problem": {
+        "name": "{disk_name} problem"
+      }
     },
     "select": {
       "fan_mode": {
@@ -73,23 +75,50 @@
       }
     },
     "sensor": {
-      "cpu_temperature": { "name": "CPU temperature" },
-      "system_temperature": { "name": "System temperature" },
-      "max_disk_temperature": { "name": "Hottest disk" },
-      "fan_speed": { "name": "Fan speed" },
-      "disk_temperature": { "name": "{disk_name} temperature" },
-      "disk_power_on_hours": { "name": "{disk_name} power-on hours" },
-      "volume_total": { "name": "{volume_name} total" },
-      "volume_used": { "name": "{volume_name} used" },
-      "volume_free": { "name": "{volume_name} free" },
-      "volume_usage": { "name": "{volume_name} usage" },
-      "pool_total": { "name": "{pool_name} total" },
-      "pool_free": { "name": "{pool_name} free" }
+      "cpu_temperature": {
+        "name": "CPU temperature"
+      },
+      "system_temperature": {
+        "name": "System temperature"
+      },
+      "max_disk_temperature": {
+        "name": "Hottest disk"
+      },
+      "fan_speed": {
+        "name": "Fan speed"
+      },
+      "disk_temperature": {
+        "name": "{disk_name} temperature"
+      },
+      "disk_power_on_hours": {
+        "name": "{disk_name} power-on hours"
+      },
+      "volume_total": {
+        "name": "{volume_name} total"
+      },
+      "volume_used": {
+        "name": "{volume_name} used"
+      },
+      "volume_free": {
+        "name": "{volume_name} free"
+      },
+      "volume_usage": {
+        "name": "{volume_name} usage"
+      },
+      "pool_total": {
+        "name": "{pool_name} total"
+      },
+      "pool_free": {
+        "name": "{pool_name} free"
+      }
     }
   },
   "exceptions": {
     "set_fan_mode_failed": {
       "message": "Could not change the fan mode on the NAS: {error}"
+    },
+    "fan_mode_not_permitted": {
+      "message": "This TerraMaster account is not permitted to change the fan mode. Reading sensors works with any account, but fan control requires an administrator account."
     }
   }
 }

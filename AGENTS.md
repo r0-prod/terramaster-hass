@@ -59,6 +59,9 @@ re-run `probe_tos.py` and then the tests.
 5. **The AES salt and `X-Security-Code` must derive from the same `Date` header**, or
    the server cannot reconstruct the key.
 6. Only request *bodies* are encrypted. GETs and all responses are plaintext JSON.
+7. **Errors arrive as HTTP 200 with `code: false`.** Check the body, not the status.
+   `code_num` 117/41/14/27/28/97 mean the session is gone and must trigger a
+   re-login; 90 means the account lacks rights and re-logging in will not help.
 
 ## Entity conventions
 

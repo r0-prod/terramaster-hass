@@ -66,6 +66,22 @@ RSA-encrypted (PKCS#1 v1.5, base64) under the `X-Rsa-Token` key — matching
 `POST /v2/hardware/set` expects the **whole** hardware object back, not a delta —
 so writes are read-modify-write.
 
+## Result codes
+
+Failures come back as **HTTP 200** with `code: false`, so the status code alone is
+not enough. Once a CSRF token is being sent, TOS stops answering `403` altogether.
+
+| `code_num` | Meaning |
+|---|---|
+| `0` | success (`code: true`) |
+| `14`, `27`, `28`, `41`, `97` | session invalid / logged out |
+| `117` | `please login` — what an expired session returns |
+| `90` | insufficient privileges; the account is valid but lacks rights |
+
+`90` must not be treated as a session problem: re-authenticating as the same user
+cannot fix it. A non-administrator account reads every endpoint here but gets `90`
+from `POST /v2/hardware/set`.
+
 Gotchas worth knowing:
 
 - `GET /v2/disk/IhmInfoList` only covers Seagate IronWolf drives, so it is not a

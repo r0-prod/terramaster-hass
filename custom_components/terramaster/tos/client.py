@@ -23,8 +23,16 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_PORT = 8181
 DEFAULT_TIMEOUT = 20
 
-# code_num values the API uses to say "your session is gone".
-_REAUTH_CODES = {14, 27, 28, 97}
+# code_num values that mean "your session is gone". Once a CSRF token is being
+# sent, TOS stops answering 403 and instead returns HTTP 200 with one of these,
+# so they must be detected from the body rather than the status code.
+#   41  logged out       97  no permission / session invalid
+#  117  "please login"   14/27/28  session errors handled by the frontend
+_REAUTH_CODES = {14, 27, 28, 41, 97, 117}
+
+# The account is valid but lacks the rights for this call -- re-logging in as the
+# same user cannot fix it, so this must not be treated as a session problem.
+_PERMISSION_DENIED = 90
 
 
 class TosError(Exception):
@@ -33,6 +41,14 @@ class TosError(Exception):
 
 class TosAuthError(TosError):
     """Credentials rejected, or the session could not be re-established."""
+
+
+class TosPermissionError(TosError):
+    """The account is valid but not permitted to perform this call.
+
+    A non-administrator TOS account can read every sensor but cannot change
+    hardware settings such as the fan mode.
+    """
 
 
 class TosClient:
@@ -159,6 +175,7 @@ class TosClient:
                 raise TosAuthError(f"{path}: not authenticated")
             await self.login()
             return await self.get(path, _retry=False)
+        self._raise_for_envelope(path, data)
         return data
 
     async def _post(
@@ -183,6 +200,8 @@ class TosClient:
                 raise TosAuthError(f"{path}: not authenticated")
             await self.login()
             return await self._post(path, payload, _retry=False)
+        if path != "/v2/login":
+            self._raise_for_envelope(path, data)
         return data
 
     async def post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -195,6 +214,21 @@ class TosClient:
         if status == 403:
             return True
         return data.get("code_num") in _REAUTH_CODES
+
+    @staticmethod
+    def _raise_for_envelope(path: str, data: dict[str, Any]) -> None:
+        """Turn ``{"code": false, ...}`` into an exception.
+
+        TOS reports most failures as HTTP 200 with ``code: false`` and a null
+        ``data``. Without this the coordinator would quietly publish empty
+        values instead of surfacing the problem.
+        """
+        if not isinstance(data, dict) or data.get("code", True):
+            return
+        message = data.get("code_msg") or data.get("msg") or "unknown error"
+        if data.get("code_num") == _PERMISSION_DENIED:
+            raise TosPermissionError(f"{path}: {message}")
+        raise TosError(f"{path}: {message} (code_num={data.get('code_num')})")
 
     # ---- endpoint wrappers -------------------------------------------------
 
