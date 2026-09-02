@@ -97,3 +97,54 @@ def test_build_volumes_and_pools_from_uuid_keyed_maps():
     assert pools[0].name == "Storage Pool 1"
     assert pools[0].level == "traid"
     assert pools[0].free == 50 * 1024
+
+
+def test_parse_size_string_handles_the_monitor_format():
+    assert models.parse_size_string("4096.0 MB") == int(4096.0 * 1024**2)
+    assert models.parse_size_string("1355.4 MB") == int(1355.4 * 1024**2)
+    assert models.parse_size_string("5.00 TB") == int(5.0 * 1024**4)
+
+
+def test_parse_size_string_rejects_junk():
+    assert models.parse_size_string(None) is None
+    assert models.parse_size_string("plenty") is None
+
+
+def test_latest_sample_takes_the_newest_entry():
+    """These series grow on every poll; element 0 would freeze the sensor."""
+    assert models.latest_sample([["0", "12.03"], ["1", "24.18"]]) == 24.18
+
+
+def test_latest_sample_handles_empty_and_malformed():
+    assert models.latest_sample([]) is None
+    assert models.latest_sample(None) is None
+    assert models.latest_sample([["0"]]) is None
+    assert models.latest_sample([["0", "nan-ish"]]) is None
+
+
+def test_build_cpu_splits_aggregate_from_cores():
+    overall, cores = models.build_cpu({"data": {
+        "cpu": [["0", "1.0"], ["1", "24.18"]],
+        "cpu0": [["0", "2.0"], ["1", "27.27"]],
+        "cpu1": [["0", "3.0"], ["1", "30.30"]],
+    }})
+    assert overall == 24.18
+    assert cores == {"cpu0": 27.27, "cpu1": 30.30}
+
+
+def test_build_cpu_on_empty_payload():
+    assert models.build_cpu({"data": {}}) == (None, {})
+
+
+def test_build_memory_returns_percent_used_and_total():
+    percent, used, total = models.build_memory({"data": {
+        "RealtimeUseage": {"mem": [["0", "20.38"], ["1", "33.09"]]},
+        "Memory": {"total": "4096.0 MB", "used": "1355.4 MB"},
+    }})
+    assert percent == 33.09
+    assert used == int(1355.4 * 1024**2)
+    assert total == int(4096.0 * 1024**2)
+
+
+def test_build_memory_on_empty_payload():
+    assert models.build_memory({"data": {}}) == (None, None, None)

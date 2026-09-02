@@ -20,7 +20,14 @@ from .const import (
     DOMAIN,
 )
 from .tos import TosAuthError, TosClient, TosError
-from .tos.models import NasData, build_disks, build_pools, build_volumes
+from .tos.models import (
+    NasData,
+    build_cpu,
+    build_disks,
+    build_memory,
+    build_pools,
+    build_volumes,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,6 +69,8 @@ class TerraMasterCoordinator(DataUpdateCoordinator[NasData]):
                 self.client.volumes(),
                 self.client.pools(),
                 self.client.processor(),
+                self.client.cpu(),
+                self.client.memory(),
             )
         except TosAuthError as err:
             # Starts the reauth flow rather than retrying with dead credentials.
@@ -71,9 +80,11 @@ class TerraMasterCoordinator(DataUpdateCoordinator[NasData]):
         except (TosError, asyncio.TimeoutError, OSError) as err:
             raise UpdateFailed(f"error talking to the NAS: {err}") from err
 
-        hardware, temps, status, listing, overview, volumes, pools, cpu = results
+        (hardware, temps, status, listing, overview, volumes, pools, cpu,
+         cpu_monitor, memory) = results
         data = self._assemble(
-            hardware, temps, status, listing, overview, volumes, pools, cpu
+            hardware, temps, status, listing, overview, volumes, pools, cpu,
+            cpu_monitor, memory,
         )
         await self._guard_against_overheating(data, hardware)
         return data
@@ -120,11 +131,15 @@ class TerraMasterCoordinator(DataUpdateCoordinator[NasData]):
         volumes: dict[str, Any],
         pools: dict[str, Any],
         cpu: dict[str, Any],
+        cpu_monitor: dict[str, Any],
+        memory: dict[str, Any],
     ) -> NasData:
         fan = (hardware.get("data") or {}).get("fan") or {}
         temp_data = temps.get("data") or {}
         overview_data = overview.get("data") or {}
         cpu_data = cpu.get("data") or {}
+        cpu_percent, cpu_cores = build_cpu(cpu_monitor)
+        mem_percent, mem_used, mem_total = build_memory(memory)
 
         return NasData(
             fan_is_auto=fan.get("is_auto"),
@@ -135,6 +150,11 @@ class TerraMasterCoordinator(DataUpdateCoordinator[NasData]):
             model=overview_data.get("model"),
             device_name=overview_data.get("device_name"),
             processor=cpu_data.get("Processor"),
+            cpu_percent=cpu_percent,
+            cpu_per_core=cpu_cores,
+            memory_percent=mem_percent,
+            memory_used=mem_used,
+            memory_total=mem_total,
             disks=build_disks(status, listing, overview),
             volumes=build_volumes(volumes),
             pools=build_pools(pools),

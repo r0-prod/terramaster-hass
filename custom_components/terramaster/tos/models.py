@@ -10,6 +10,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+# "4096.0 MB" -> bytes
+_SIZE_STRING_RE = re.compile(r"([\d.]+)\s*([KMGTP]?B)", re.IGNORECASE)
+
 # "44°C/111°F" -> 44
 _TEMP_RE = re.compile(r"(-?\d+(?:\.\d+)?)\s*°?\s*C", re.IGNORECASE)
 
@@ -56,6 +59,39 @@ def parse_size(value: Any) -> int | None:
     if multiplier is None:
         return None
     return int(float(raw) * multiplier)
+
+
+def parse_size_string(value: Any) -> int | None:
+    """Convert a ``"4096.0 MB"`` style string to bytes.
+
+    The monitor endpoints report memory this way, unlike the storage endpoints
+    which use ``{"value": N, "unit": "KB"}`` -- see :func:`parse_size`.
+    """
+    if value is None:
+        return None
+    match = _SIZE_STRING_RE.search(str(value))
+    if not match:
+        return None
+    multiplier = _UNIT_MULTIPLIER.get(match.group(2).upper())
+    return None if multiplier is None else int(float(match.group(1)) * multiplier)
+
+
+def latest_sample(series: Any) -> float | None:
+    """Take the newest value from a TOS monitor series.
+
+    These endpoints return ``[[index, value], ...]`` and *append* a sample on
+    every call, so the last entry is the current reading. Reading element 0
+    would pin the sensor to whatever the value was at the first poll.
+    """
+    if not isinstance(series, list) or not series:
+        return None
+    last = series[-1]
+    if not isinstance(last, (list, tuple)) or len(last) < 2:
+        return None
+    try:
+        return float(last[1])
+    except (TypeError, ValueError):
+        return None
 
 
 def resolve_name(show_name: Any, fallback: str = "") -> str:
@@ -129,6 +165,11 @@ class NasData:
     model: str | None = None
     device_name: str | None = None
     processor: str | None = None
+    cpu_percent: float | None = None
+    cpu_per_core: dict[str, float] = field(default_factory=dict)
+    memory_percent: float | None = None
+    memory_used: int | None = None
+    memory_total: int | None = None
     disks: list[Disk] = field(default_factory=list)
     volumes: list[Volume] = field(default_factory=list)
     pools: list[Pool] = field(default_factory=list)
@@ -224,3 +265,35 @@ def build_pools(payload: Any) -> list[Pool]:
             )
         )
     return sorted(pools, key=lambda p: p.name)
+
+
+def build_cpu(payload: Any) -> tuple[float | None, dict[str, float]]:
+    """Aggregate CPU percentage plus per-core values.
+
+    ``cpu`` is the overall figure; ``cpu0``..``cpuN`` are the individual cores.
+    """
+    data = _unwrap(payload) or {}
+    if not isinstance(data, dict):
+        return None, {}
+    overall = latest_sample(data.get("cpu"))
+    cores = {
+        key: value
+        for key in sorted(data)
+        if key != "cpu" and key.startswith("cpu")
+        and (value := latest_sample(data[key])) is not None
+    }
+    return overall, cores
+
+
+def build_memory(payload: Any) -> tuple[float | None, int | None, int | None]:
+    """Memory usage percentage, used bytes and total bytes."""
+    data = _unwrap(payload) or {}
+    if not isinstance(data, dict):
+        return None, None, None
+    percent = latest_sample((data.get("RealtimeUseage") or {}).get("mem"))
+    absolute = data.get("Memory") or {}
+    return (
+        percent,
+        parse_size_string(absolute.get("used")),
+        parse_size_string(absolute.get("total")),
+    )

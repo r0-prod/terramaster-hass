@@ -62,6 +62,8 @@ RSA-encrypted (PKCS#1 v1.5, base64) under the `X-Rsa-Token` key — matching
 | Bay layout, model, capacities | `GET /v2/disk/GetOverview` |
 | Volumes / pools | `GET /v2/storage/list/volume`, `GET /v2/storage/list/pool` |
 | CPU model | `GET /v2/systemStatus/NasProcessorInfo` |
+| CPU usage | `GET /v2/systemStatus/CPUMonitor` |
+| Memory usage | `GET /v2/systemStatus/MemoryMonitor` |
 
 `POST /v2/hardware/set` expects the **whole** hardware object back, not a delta —
 so writes are read-modify-write.
@@ -81,6 +83,16 @@ not enough. Once a CSRF token is being sent, TOS stops answering `403` altogethe
 `90` must not be treated as a session problem: re-authenticating as the same user
 cannot fix it. A non-administrator account reads every endpoint here but gets `90`
 from `POST /v2/hardware/set`.
+
+The `*Monitor` endpoints return `[[index, value], ...]` and **append a sample on
+every call**, so the newest reading is the *last* element. Reading element 0 pins the
+sensor to whatever the value was at the first poll. `CPUMonitor` returns `cpu`
+(aggregate) plus `cpu0`..`cpuN` per core; `MemoryMonitor` returns a percentage series
+plus absolute `"4096.0 MB"` strings.
+
+TOS exposes **no power/wattage** anywhere, with or without a UPS: `/v2/ups/` reports
+only `charge`, `runtime` and `status`. There is no `loadavg` endpoint either -- the
+"Average Load" panel in the TOS UI is the CPU-percentage chart.
 
 Gotchas worth knowing:
 

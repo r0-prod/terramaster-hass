@@ -17,6 +17,7 @@ locally, with no cloud account.
 
 - Per-drive temperature, power-on hours and health, for every bay
 - CPU and system temperature, plus a "hottest disk" sensor for automations
+- CPU usage (with per-core breakdown) and memory usage
 - Fan speed in RPM and a fan mode control (Automatic / Low / Medium / Full)
 - Volume and storage pool capacity and usage
 - Overheat protection: restores automatic fan control if the drives get too hot
@@ -69,6 +70,8 @@ default interval is 60 seconds.
 | `sensor` HDD*n* temperature | One per bay, with model, serial and capacity as attributes |
 | `sensor` HDD*n* power-on hours | Diagnostic |
 | `sensor` CPU / System temperature | |
+| `sensor` CPU usage | Percentage, with per-core load as attributes |
+| `sensor` Memory usage / Memory used | Percentage and bytes; total as an attribute |
 | `sensor` Hottest disk | Highest drive temperature — the one to automate on |
 | `sensor` Fan speed | RPM |
 | `sensor` Volume / Pool total, used, free, usage | Per volume and per pool |

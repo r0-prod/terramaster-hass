@@ -64,6 +64,15 @@ POOLS = _ok({"uuid-1-traid": {
     "free": {"value": 977387520, "unit": "KB"},
 }})
 CPU = _ok({"IsArm": False, "Processor": "Intel(R) Celeron(R) N5095 @ 2.00GHz"})
+CPU_MONITOR = _ok({
+    "cpu": [["0", "12.03"], ["1", "24.18"]],
+    "cpu0": [["0", "6.06"], ["1", "27.27"]],
+    "cpu1": [["0", "26.00"], ["1", "30.30"]],
+})
+MEMORY = _ok({
+    "RealtimeUseage": {"mem": [["0", "20.38"], ["1", "33.09"]]},
+    "Memory": {"total": "4096.0 MB", "used": "1355.4 MB"},
+})
 
 GET_ROUTES = {
     "/hardware/": HARDWARE,
@@ -74,6 +83,8 @@ GET_ROUTES = {
     "/storage/list/volume": VOLUMES,
     "/storage/list/pool": POOLS,
     "/systemStatus/NasProcessorInfo": CPU,
+    "/systemStatus/CPUMonitor": CPU_MONITOR,
+    "/systemStatus/MemoryMonitor": MEMORY,
 }
 
 
@@ -90,6 +101,8 @@ def _make_client():
     client.volumes.side_effect = lambda: routes["/storage/list/volume"]
     client.pools.side_effect = lambda: routes["/storage/list/pool"]
     client.processor.side_effect = lambda: routes["/systemStatus/NasProcessorInfo"]
+    client.cpu.side_effect = lambda: routes["/systemStatus/CPUMonitor"]
+    client.memory.side_effect = lambda: routes["/systemStatus/MemoryMonitor"]
     client.routes = routes  # tests mutate this to simulate the NAS changing
     return client
 
@@ -281,3 +294,20 @@ async def test_fan_mode_permission_error_explains_itself(
             blocking=True,
         )
     assert err.value.translation_key == "fan_mode_not_permitted"
+
+
+async def test_cpu_and_memory_sensors(hass: HomeAssistant, mock_client) -> None:
+    """Monitor endpoints append samples, so the LAST one is the current value."""
+    await _setup(hass)
+
+    cpu = hass.states.get("sensor.tnas_cpu_usage")
+    assert cpu.state == "24.18"                       # not 12.03, the first sample
+    assert cpu.attributes["cpu0"] == 27.27            # per-core as attributes
+    assert cpu.attributes["cpu1"] == 30.30
+    assert "cpu" not in cpu.attributes                # aggregate is the state
+
+    assert hass.states.get("sensor.tnas_memory_usage").state == "33.09"
+
+    used = hass.states.get("sensor.tnas_memory_used")
+    assert float(used.state) == pytest.approx(1355.4 * 1024**2 / 1024**2, rel=1e-3)
+    assert used.attributes["total"] == int(4096.0 * 1024**2)

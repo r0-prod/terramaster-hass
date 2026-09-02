@@ -110,6 +110,15 @@
       },
       "pool_free": {
         "name": "{pool_name} free"
+      },
+      "cpu_usage": {
+        "name": "CPU usage"
+      },
+      "memory_usage": {
+        "name": "Memory usage"
+      },
+      "memory_used": {
+        "name": "Memory used"
       }
     }
   },

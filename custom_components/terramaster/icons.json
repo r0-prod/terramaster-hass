@@ -21,18 +21,51 @@
       }
     },
     "sensor": {
-      "cpu_temperature": { "default": "mdi:cpu-64-bit" },
-      "system_temperature": { "default": "mdi:thermometer" },
-      "max_disk_temperature": { "default": "mdi:thermometer-alert" },
-      "fan_speed": { "default": "mdi:fan" },
-      "disk_temperature": { "default": "mdi:harddisk" },
-      "disk_power_on_hours": { "default": "mdi:clock-outline" },
-      "volume_total": { "default": "mdi:database" },
-      "volume_used": { "default": "mdi:database-check" },
-      "volume_free": { "default": "mdi:database-plus" },
-      "volume_usage": { "default": "mdi:gauge" },
-      "pool_total": { "default": "mdi:server" },
-      "pool_free": { "default": "mdi:server-plus" }
+      "cpu_temperature": {
+        "default": "mdi:cpu-64-bit"
+      },
+      "system_temperature": {
+        "default": "mdi:thermometer"
+      },
+      "max_disk_temperature": {
+        "default": "mdi:thermometer-alert"
+      },
+      "fan_speed": {
+        "default": "mdi:fan"
+      },
+      "disk_temperature": {
+        "default": "mdi:harddisk"
+      },
+      "disk_power_on_hours": {
+        "default": "mdi:clock-outline"
+      },
+      "volume_total": {
+        "default": "mdi:database"
+      },
+      "volume_used": {
+        "default": "mdi:database-check"
+      },
+      "volume_free": {
+        "default": "mdi:database-plus"
+      },
+      "volume_usage": {
+        "default": "mdi:gauge"
+      },
+      "pool_total": {
+        "default": "mdi:server"
+      },
+      "pool_free": {
+        "default": "mdi:server-plus"
+      },
+      "cpu_usage": {
+        "default": "mdi:cpu-64-bit"
+      },
+      "memory_usage": {
+        "default": "mdi:memory"
+      },
+      "memory_used": {
+        "default": "mdi:memory"
+      }
     }
   }
 }

@@ -71,6 +71,32 @@ SYSTEM_SENSORS: tuple[TerraMasterSensorDescription, ...] = (
         value_fn=lambda data: data.max_disk_temperature,
     ),
     TerraMasterSensorDescription(
+        key="cpu_usage",
+        translation_key="cpu_usage",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data: data.cpu_percent,
+    ),
+    TerraMasterSensorDescription(
+        key="memory_usage",
+        translation_key="memory_usage",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda data: data.memory_percent,
+    ),
+    TerraMasterSensorDescription(
+        key="memory_used",
+        translation_key="memory_used",
+        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        suggested_unit_of_measurement=UnitOfInformation.MEBIBYTES,
+        suggested_display_precision=0,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.memory_used,
+    ),
+    TerraMasterSensorDescription(
         key="fan_speed",
         translation_key="fan_speed",
         native_unit_of_measurement=REVOLUTIONS_PER_MINUTE,
@@ -140,6 +166,20 @@ class TerraMasterSensor(TerraMasterEntity, SensorEntity):
     @property
     def native_value(self) -> float | int | str | None:
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object] | None:
+        """Per-core load on the CPU sensor, total memory on the memory sensor.
+
+        Core count varies by NAS model, so these are attributes rather than a
+        variable number of entities.
+        """
+        data = self.coordinator.data
+        if self.entity_description.key == "cpu_usage":
+            return {"processor": data.processor, **data.cpu_per_core} or None
+        if self.entity_description.key == "memory_used":
+            return {"total": data.memory_total}
+        return None
 
 
 class TerraMasterDiskTemperature(TerraMasterDiskEntity, SensorEntity):

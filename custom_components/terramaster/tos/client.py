@@ -255,6 +255,12 @@ class TosClient:
     async def processor(self) -> dict[str, Any]:
         return await self.get("/systemStatus/NasProcessorInfo")
 
+    async def cpu(self) -> dict[str, Any]:
+        return await self.get("/systemStatus/CPUMonitor")
+
+    async def memory(self) -> dict[str, Any]:
+        return await self.get("/systemStatus/MemoryMonitor")
+
     async def pools(self) -> dict[str, Any]:
         return await self.get("/storage/list/pool")
 
