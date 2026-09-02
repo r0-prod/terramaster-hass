@@ -1,0 +1,95 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to your TerraMaster NAS",
+        "description": "Home Assistant talks to the NAS directly on your local network. Nothing is sent to TerraMaster.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the NAS, for example 192.168.1.10.",
+          "port": "Port of the TOS web interface. The default is 8181.",
+          "username": "A TOS user account. An administrator account is required to change the fan mode.",
+          "password": "The password for that account. It is stored locally and only ever sent to the NAS."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate with your TerraMaster NAS",
+        "description": "The credentials for {host} are no longer accepted. Enter them again to reconnect.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "username": "A TOS user account, usually the same one you used before.",
+          "password": "The current password for that account."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the NAS. Check the host and port, and that the TOS web interface is open.",
+      "invalid_auth": "The NAS rejected that username or password.",
+      "unknown": "Unexpected error. Check the Home Assistant log for details."
+    },
+    "abort": {
+      "already_configured": "This NAS is already set up in Home Assistant.",
+      "reauth_successful": "Reconnected to the NAS successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TerraMaster NAS options",
+        "data": {
+          "scan_interval": "Polling interval",
+          "overheat_protection": "Overheat protection",
+          "overheat_celsius": "Overheat threshold"
+        },
+        "data_description": {
+          "scan_interval": "Seconds between updates. Reading temperatures runs SMART queries on the NAS and takes a few seconds, so values below 30 add load for little benefit.",
+          "overheat_protection": "If the hottest drive reaches the threshold while the fan is in a fixed mode, switch it back to Automatic. A fixed mode disables the firmware's own temperature ramp, so this prevents the drives from cooking.",
+          "overheat_celsius": "Temperature at which automatic fan control is restored. TerraMaster warns about drive life above 55 °C."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "disk_problem": { "name": "{disk_name} problem" }
+    },
+    "select": {
+      "fan_mode": {
+        "name": "Fan mode",
+        "state": {
+          "auto": "Automatic",
+          "low": "Low",
+          "medium": "Medium",
+          "full": "Full"
+        }
+      }
+    },
+    "sensor": {
+      "cpu_temperature": { "name": "CPU temperature" },
+      "system_temperature": { "name": "System temperature" },
+      "max_disk_temperature": { "name": "Hottest disk" },
+      "fan_speed": { "name": "Fan speed" },
+      "disk_temperature": { "name": "{disk_name} temperature" },
+      "disk_power_on_hours": { "name": "{disk_name} power-on hours" },
+      "volume_total": { "name": "{volume_name} total" },
+      "volume_used": { "name": "{volume_name} used" },
+      "volume_free": { "name": "{volume_name} free" },
+      "volume_usage": { "name": "{volume_name} usage" },
+      "pool_total": { "name": "{pool_name} total" },
+      "pool_free": { "name": "{pool_name} free" }
+    }
+  },
+  "exceptions": {
+    "set_fan_mode_failed": {
+      "message": "Could not change the fan mode on the NAS: {error}"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "domain": "terramaster",
+  "name": "TerraMaster NAS",
+  "codeowners": [
+    "@r0-prod"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/r0-prod/terramaster-hass",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/r0-prod/terramaster-hass/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

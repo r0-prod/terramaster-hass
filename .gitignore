@@ -1,0 +1,6 @@
+.env.local
+.venv/
+__pycache__/
+*.pyc
+tools/captures/
+.pytest_cache/

@@ -1,0 +1,10 @@
+# Runtime dependencies of the standalone TOS client in custom_components/terramaster/tos/.
+# Home Assistant ships both, but they are listed so the client and tools/ can be used
+# without Home Assistant installed.
+aiohttp>=3.9
+cryptography>=42.0
+
+# Test harness. This pulls in a matching Home Assistant and pytest-asyncio, so neither
+# should be pinned separately here.
+pytest>=8.0
+pytest-homeassistant-custom-component>=0.13.205
